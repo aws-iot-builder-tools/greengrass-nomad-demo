@@ -1,11 +1,6 @@
-## My Project
+## Greengrass Nomad Demo
 
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+The project is part of a [blog post](https://dev.to/nenadilic84/orchestrating-application-workloads-in-distributed-embedded-systems-setting-up-a-nomad-cluster-with-aws-iot-greengrass-part-1-1bdi)
 
 ## Security
 
