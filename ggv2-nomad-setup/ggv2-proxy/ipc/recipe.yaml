@@ -1,0 +1,59 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "This component adds a service that exposes GGv2 IPC socket over TCP"
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentDependencies:
+  nomad.bootstrap.server:
+    VersionRequirement: ^1.0.0
+    DependencyType: HARD
+Manifests:
+  - Platform:
+      os: linux
+    Lifecycle:
+      Install:
+        RequiresPrivilege: true
+        Script: |-
+          cat > ggv2-server-ipc.nomad <<EOF
+          job "ggv2-server-ipc" {
+            datacenters = ["dc1"]
+            type = "system"
+
+            group "server-ipc-group" {
+            
+              constraint {
+                attribute = "\${meta.greengrass_ipc}"
+                operator  = "="
+                value     = "server"
+              }
+              
+              network {
+                port "ipc_socat" {
+                  static = 3307
+                }
+              }
+
+              service {
+                name = "ggv2-server-ipc"
+                port = "ipc_socat"
+                provider = "nomad"
+              }
+            
+              task "server-ipc-task" {
+                driver = "raw_exec"
+                config {
+                  command = "socat"
+                  args = [
+                      "TCP-LISTEN:3307,fork,nonblock",
+                      "UNIX-CONNECT:$AWS_GG_NUCLEUS_DOMAIN_SOCKET_FILEPATH_FOR_COMPONENT,nonblock"
+                  ]
+                }
+              }
+            }
+          }
+          EOF
+          NOMAD_ADDR=http://127.0.0.1:8080 nomad job run ggv2-server-ipc.nomad || true
+
+
+

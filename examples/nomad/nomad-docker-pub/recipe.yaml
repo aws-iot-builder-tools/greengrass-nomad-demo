@@ -1,0 +1,70 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "This component adds a service that exposes GGv2 IPC socket over TCP"
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentConfiguration:
+  DefaultConfiguration:
+    accessControl:
+      aws.greengrass.ipc.mqttproxy:
+        nomad.docker.pub:mqttproxy:1:
+          policyDescription: Allows access to publish to all topics.
+          operations:
+            - aws.greengrass#PublishToIoTCore
+          resources:
+            - "*"
+ComponentDependencies:
+  ggv2.nomad.proxy.ipc:
+    VersionRequirement: ^1.0.0
+    DependencyType: SOFT
+Manifests:
+  - Platform:
+      os: linux
+    Lifecycle:
+      Install:
+        RequiresPrivilege: true
+        Script: |-
+          cat > nomad-docker-pub-example.nomad <<EOF
+          job "nomad-docker-pub-example" {
+            datacenters = ["dc1"]
+            type = "service"
+
+            group "pub-example-group" {
+            
+              constraint {
+                attribute = "\${meta.greengrass_ipc}"
+                operator  = "="
+                value     = "client"
+              }
+
+              task "pub-example-task" {
+                driver = "docker"
+                config {
+                  image = "{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_REGION}.amazonaws.com/{COMPONENT_NAME_DIR}:latest"
+                  command = "/bin/bash"
+                  args = ["-c", "socat UNIX-LISTEN:\$AWS_GG_NUCLEUS_DOMAIN_SOCKET_FILEPATH_FOR_COMPONENT,fork,nonblock TCP-CONNECT:\$GGV2_SERVER_IPC_ADDRESS,nonblock & python3 -u /pyfiles/app.py "]
+                }
+                env {
+                  AWS_GG_NUCLEUS_DOMAIN_SOCKET_FILEPATH_FOR_COMPONENT = "/tmp/ipc.socket"
+                  SVCUID="$SVCUID"
+                }
+                template {
+                  data = <<EOF
+            # Get all services and add them to env variables with their names
+            {{ range nomadServices }}
+              {{- range nomadService .Name }}
+              {{ .Name | toUpper | replaceAll "-" "_" }}_ADDRESS={{ .Address}}:{{ .Port }}{{- end }}
+            {{ end -}}
+            EOF
+
+                  destination = "local/env"
+                  env = true
+                }
+              }
+            }
+          }
+          EOF
+          NOMAD_ADDR=http://127.0.0.1:8080 nomad job run nomad-docker-pub-example.nomad || true
+
+

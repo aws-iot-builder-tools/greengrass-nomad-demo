@@ -1,0 +1,16 @@
+{
+    "component": {
+      "ggv2.nomad.proxy.ipc": {
+        "author": "Nenad Ilic",
+        "version": "NEXT_PATCH",
+        "build": {
+          "build_system": "zip"
+        },
+        "publish": {
+          "bucket": "greengrass-component-artifacts",
+          "region": "eu-west-1"
+        }
+      }
+    },
+    "gdk_version": "1.1.0"
+}

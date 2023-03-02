@@ -1,0 +1,23 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "This component bootstraps a nomad server"
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+Manifests:
+  - Platform:
+      os: linux
+    Artifacts:
+      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/nomad-server.zip"
+        Unarchive: ZIP
+    Lifecycle:
+      Install:
+        RequiresPrivilege: true
+        Script: |-
+          cp {artifacts:decompressedPath}/nomad-server/config/server.hcl /etc/nomad.d/
+          chmod +x {artifacts:decompressedPath}/nomad-server/scripts/nomad-installation.sh
+          {artifacts:decompressedPath}/nomad-server/scripts/nomad-installation.sh
+      Run:
+        RequiresPrivilege: true
+        Script: "/usr/local/bin/nomad agent -config=/etc/nomad.d"
+

@@ -1,0 +1,30 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "A component that uses the token exchange service to list S3 buckets."
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentDependencies:
+  aws.greengrass.DockerApplicationManager:
+    VersionRequirement: ">=2.0.0 <2.1.0"
+    DependencyType: HARD
+  aws.greengrass.TokenExchangeService:
+    VersionRequirement: ">=2.0.0 <2.1.0"
+    DependencyType: HARD
+Manifests:
+  - Platform:
+      os: linux
+    Artifacts:
+    - Uri: docker:{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_REGION}.amazonaws.com/{COMPONENT_NAME_DIR}:latest
+      Unarchive: NONE
+      Permission:
+        Read: OWNER
+        Execute: NONE
+    Lifecycle:
+      Run: |-
+        docker run --rm -t \
+        -e AWS_CONTAINER_CREDENTIALS_FULL_URI \
+        -e AWS_REGION \
+        -e AWS_CONTAINER_AUTHORIZATION_TOKEN \
+        --network=host \
+        {AWS_ACCOUNT_ID}.dkr.ecr.{AWS_REGION}.amazonaws.com/{COMPONENT_NAME_DIR}:latest

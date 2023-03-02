@@ -1,0 +1,92 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "This component adds a service that exposes GGv2 TES"
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentDependencies: 
+  aws.greengrass.TokenExchangeService:
+    VersionRequirement: ">0.0.0"
+    DependencyType: HARD
+  nomad.bootstrap.server:
+    VersionRequirement: ^1.0.0
+    DependencyType: SOFT
+Manifests:
+  - Platform:
+      os: linux
+    Lifecycle:
+      Install:
+        RequiresPrivilege: true
+        Script: |-
+          TES_PORT=$(echo $AWS_CONTAINER_CREDENTIALS_FULL_URI | sed -r 's/^(http:\/\/localhost:)([0-9]+).*/\2/')
+          TES_PORT_EXPOSE=$(expr $TES_PORT + 1)
+          HOST_IP=$(hostname -I | awk '{print $1}')
+          cat > ggv2-server-tes.nomad <<EOF
+          job "ggv2-server-tes" {
+            datacenters = ["dc1"]
+            type = "system"
+
+            group "server-tes-group" {
+
+              constraint {
+                attribute = "\${meta.greengrass_ipc}"
+                operator  = "="
+                value     = "server"
+              }
+
+              network {
+                port "tes" {
+                  static = $TES_PORT_EXPOSE
+                }
+              }
+
+              service {
+                name = "ggv2-server-tes"
+                port = "tes"
+                provider = "nomad"
+              }
+
+              task "server-tes-task" {
+                driver = "raw_exec"
+                config {
+                  command = "socat"
+                  args = [
+                    "TCP-LISTEN:$TES_PORT_EXPOSE,fork",
+                    "TCP:localhost:$TES_PORT"
+                  ]
+                }
+              }
+            }
+            group "clients-tes-group" {
+
+              constraint {
+                attribute = "\${meta.greengrass_ipc}"
+                operator  = "="
+                value     = "client"
+              }
+
+              network {
+                port "tes" {
+                  static = $TES_PORT
+                }
+              }
+
+              service {
+                name = "ggv2-clients-tes"
+                port = "tes"
+                provider = "nomad"
+              }
+
+              task "clients-tes-task" {
+                driver = "raw_exec"
+                config {
+                  command = "socat"
+                  args    = ["TCP-LISTEN:$TES_PORT,fork", "TCP:$HOST_IP:$TES_PORT_EXPOSE"]
+                }
+              }
+            }
+          }
+          EOF
+          NOMAD_ADDR=http://127.0.0.1:8080 nomad job run ggv2-server-tes.nomad || true
+
+

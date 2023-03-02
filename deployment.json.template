@@ -1,0 +1,41 @@
+{
+    "targetArn": "arn:aws:iot:$AWS_REGION:$AWS_ACCOUNT_ID:thinggroup/nomad-cluster",
+    "deploymentName": "Deployment for nomad-cluster group",
+    "components": {
+        "nomad.bootstrap.server": {
+            "componentVersion": "1.0.0",
+            "runWith": {}
+        },
+        "nomad.bootstrap.clients": {
+            "componentVersion": "1.0.0",
+            "runWith": {}
+        },
+        "nomad.ggv2.proxy.ipc": {
+            "componentVersion": "1.0.0",
+            "runWith": {}
+        },
+        "nomad.docker.pub": {
+            "componentVersion": "1.0.0",
+            "runWith": {}
+        },
+        "nomad.ggv2.proxy.tes": {
+            "componentVersion": "1.0.0",
+            "runWith": {}
+        },
+        "nomad.docker.s3": {
+            "componentVersion": "1.0.0",
+            "runWith": {}
+        }
+    },
+    "deploymentPolicies": {
+        "failureHandlingPolicy": "ROLLBACK",
+        "componentUpdatePolicy": {
+            "timeoutInSeconds": 60,
+            "action": "NOTIFY_COMPONENTS"
+        },
+        "configurationValidationPolicy": {
+            "timeoutInSeconds": 60
+        }
+    },
+    "iotJobConfiguration": {}
+}

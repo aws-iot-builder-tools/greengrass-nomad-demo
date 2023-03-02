@@ -1,0 +1,76 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "This component bootstraps multiple nomad clients"
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentConfiguration:
+  DefaultConfiguration:
+    Server:
+      DnsName: "ip-10-0-1-27.eu-west-1.compute.internal"
+    Client:
+      "1":
+        UserName: root
+        DnsName: "ip-10-0-1-231.eu-west-1.compute.internal"
+      "2":
+        UserName: root
+        DnsName: "ip-10-0-1-48.eu-west-1.compute.internal"
+ComponentDependencies:
+  nomad.bootstrap.server:
+    VersionRequirement: ^1.0.0
+    DependencyType: SOFT
+Manifests:
+  - Platform:
+      os: linux
+    Artifacts:
+      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/nomad-clients.zip"
+        Unarchive: ZIP
+    Lifecycle:
+      Setenv:
+        SERVER_DNS: "{configuration:/Server/DnsName}"
+        CLIENT_1_USER: "{configuration:/Client/1/UserName}"
+        CLIENT_1_DNS: "{configuration:/Client/1/DnsName}"
+        CLIENT_2_USER: "{configuration:/Client/2/UserName}"
+        CLIENT_2_DNS: "{configuration:/Client/2/DnsName}"
+        CONFIG_DIR: "{artifacts:decompressedPath}/nomad-clients/config"
+        SCRIPTS_DIR: "{artifacts:decompressedPath}/nomad-clients/scripts"
+      Install:
+        RequiresPrivilege: true
+        Script: |-
+
+          chmod +x $SCRIPTS_DIR/nomad-installation.sh
+          sed -i "s/<SERVER_DNS_NAME>/$SERVER_DNS/g" $CONFIG_DIR/client.hcl
+
+          # Install on client 1
+          scp $SCRIPTS_DIR/nomad-installation.sh  $CLIENT_1_USER@$CLIENT_1_DNS:/tmp/
+          scp $SCRIPTS_DIR/nomad.service  $CLIENT_1_USER@$CLIENT_1_DNS:/etc/systemd/system/
+          scp $CONFIG_DIR/client.hcl  $CLIENT_1_USER@$CLIENT_1_DNS:/etc/nomad.d/
+          ssh -T $CLIENT_1_USER@$CLIENT_1_DNS '/tmp/nomad-installation.sh'
+       
+          # Install on client 2
+          scp $SCRIPTS_DIR/nomad-installation.sh  $CLIENT_2_USER@$CLIENT_2_DNS:/tmp/
+          scp $SCRIPTS_DIR/nomad.service  $CLIENT_2_USER@$CLIENT_2_DNS:/etc/systemd/system/
+          scp $CONFIG_DIR/client.hcl  $CLIENT_2_USER@$CLIENT_2_DNS:/etc/nomad.d/
+          ssh -T $CLIENT_2_USER@$CLIENT_2_DNS '/tmp/nomad-installation.sh'
+
+      Startup:
+        RequiresPrivilege: true
+        Script: |-
+
+          # Startup the client 1
+          ssh -T $CLIENT_1_USER@$CLIENT_1_DNS 'systemctl enable nomad.service'
+          ssh -T $CLIENT_1_USER@$CLIENT_1_DNS 'systemctl start nomad.service'
+       
+          # Startup the client 2
+          ssh -T $CLIENT_2_USER@$CLIENT_2_DNS 'systemctl enable nomad.service'
+          ssh -T $CLIENT_2_USER@$CLIENT_2_DNS 'systemctl start nomad.service'
+
+      Shutdown:
+        RequiresPrivilege: true
+        Script: |-
+
+          # Shutdown the client 1
+          ssh -T $CLIENT_1_USER@$CLIENT_1_DNS 'systemctl stop nomad.service'
+       
+          # Shutdown the client 2
+          ssh -T $CLIENT_2_USER@$CLIENT_2_DNS 'systemctl stop nomad.service'
