@@ -31,7 +31,7 @@ Manifests:
             type = "service"
 
             group "pub-example-group" {
-            
+              count = 1
               constraint {
                 attribute = "\${meta.greengrass_ipc}"
                 operator  = "="

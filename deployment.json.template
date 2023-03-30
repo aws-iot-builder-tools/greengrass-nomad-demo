@@ -10,7 +10,7 @@
             "componentVersion": "1.0.0",
             "runWith": {}
         },
-        "nomad.ggv2.proxy.ipc": {
+        "ggv2.nomad.proxy.ipc": {
             "componentVersion": "1.0.0",
             "runWith": {}
         },
@@ -18,7 +18,7 @@
             "componentVersion": "1.0.0",
             "runWith": {}
         },
-        "nomad.ggv2.proxy.tes": {
+        "ggv2.nomad.proxy.tes": {
             "componentVersion": "1.0.0",
             "runWith": {}
         },

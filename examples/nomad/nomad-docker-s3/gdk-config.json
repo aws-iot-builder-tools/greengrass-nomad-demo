@@ -1,6 +1,6 @@
 {
   "component": {
-    "ggv2.nomad.proxy.tes": {
+    "nomad.docker.s3": {
       "author": "Nenad Ilic",
       "version": "NEXT_PATCH",
       "build": {
